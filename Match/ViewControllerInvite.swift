@@ -32,7 +32,7 @@ class ViewControllerInvite: UIViewController {
         self.waitForInviteAccept()
            self.myTimer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: #selector(ViewControllerInvite.waitForInviteAccept), userInfo: nil, repeats: true)
         
-        
+       //dfxcvxcv
         
             
             
