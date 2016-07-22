@@ -89,7 +89,14 @@ class ViewController: UIViewController {
     }
     
     func layoutCards() {
+        //******************************
         
+
+                
+        
+        
+        
+//****************************************
         self.cardViews = [self.card00, self.card01, self.card02,  self.card03,  self.card04, self.card10, self.card11, self.card12,  self.card13,  self.card14, self.card20, self.card21, self.card22,  self.card23,  self.card24, self.card30, self.card31, self.card32,  self.card33,  self.card34]
         
         let minNum:Int = min(self.cards.count, self.cardViews.count)
@@ -140,11 +147,11 @@ class ViewController: UIViewController {
                         if (records?.count > 0)
                         {
                             let gameRecord:CKRecord = records![0]
-                            var opponentsCardID:String = gameRecord["\(playerString)CardID"] as! String
-                            var opponentsCardName:String = gameRecord["\(playerString)CardName"] as! String
+                            let opponentsCardID:String = gameRecord["\(playerString)CardID"] as! String
+                            let opponentsCardName:String = gameRecord["\(playerString)CardName"] as! String
                             if opponentsCardID == cardThatWasTapped.profPicURL {
                                 print("You won!")
-                                var opponentCard:Card = Card()
+                                let opponentCard:Card = Card()
                                 opponentCard.personName = opponentsCardName
                                 opponentCard.profPicURL = opponentsCardID
                                 opponentCard.profilePicture = UIImage(data: NSData(contentsOfURL: NSURL(string: opponentsCardID)!)!)!
@@ -269,7 +276,7 @@ extension UIViewController {
         }
         
         for viewController in self.childViewControllers {
-            if let vc = viewController as? UIViewController {
+            if let vc:UIViewController = viewController as UIViewController {
                 if let child = vc.childViewControllerWithType(type) {
                     return child
                 }

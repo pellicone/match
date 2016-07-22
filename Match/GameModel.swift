@@ -12,6 +12,7 @@ import FBSDKLoginKit
 
 class GameModel: NSObject {
     var cards:[CardStruct] = [CardStruct]()
+    var randomize:Bool = true
     func getCards() -> [Card] {
         var generatedCards:[Card] = [Card]()
         // generate some card objects
@@ -31,6 +32,7 @@ class GameModel: NSObject {
         }
  
         // Randomize the cards
+        if (self.randomize) {
         for index in 0...(generatedCards.count - 1) {
             let currentCard:Card = generatedCards[index]
             // Randomly choose another index
@@ -39,6 +41,7 @@ class GameModel: NSObject {
             generatedCards[index] = generatedCards[randomIndex]
             generatedCards[randomIndex] = currentCard
             
+        }
         }
         //self.setFacebookProfiles(generatedCards)
 

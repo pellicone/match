@@ -8,6 +8,7 @@
 
 import UIKit
 import CloudKit
+import Parse
 class ViewControllerInvite: UIViewController {
     var container:CKContainer?
     var publicDatabase:CKDatabase?
@@ -56,6 +57,40 @@ class ViewControllerInvite: UIViewController {
     }
     
     func cancelButtonAction() {
+        let query = PFQuery(className:"GameInstance")
+        query.whereKey("userEmail", equalTo: self.userID!)
+        query.findObjectsInBackgroundWithBlock {
+            (objects: [PFObject]?, error: NSError?) -> Void in
+            
+            if error == nil {
+                // The find succeeded.
+                print("Successfully retrieved \(objects!.count) scores.")
+                // Do something with the found objects
+                
+                
+                    for object in objects! {
+                        object.deleteInBackgroundWithBlock({ (f, error) in
+                            //object delete
+                         print("record deleted")
+                        })
+                //print("record deleted")
+                        self.myTimer?.invalidate()
+                    }
+                
+            } else {
+                // Log details of the failure
+                print("Error: \(error!) \(error!.userInfo)")
+            }
+        }
+        
+
+        
+        
+        
+        
+        
+        //***************************************************************************
+        /*
         print(self.userID!)
         let query = CKQuery(recordType: "GameInstance", predicate: NSPredicate(format: "userEmail == '\(self.userID!)'", argumentArray: nil))
         self.publicDatabase!.performQuery(query, inZoneWithID: nil) { (records, error) in
@@ -84,7 +119,10 @@ class ViewControllerInvite: UIViewController {
             }
             
         }
+ */
     }
+    
+    
     override func viewWillDisappear(animated: Bool) {
         self.myTimer!.invalidate()
         self.myTimer = nil
@@ -104,7 +142,7 @@ class ViewControllerInvite: UIViewController {
                 
                 // No error, go through the records
                 
-                dispatch_after(4, dispatch_get_main_queue()) {
+                dispatch_after(3, dispatch_get_main_queue()) {
                    if (records?.count > 0)
                    {
                     self.gameRecord = records![0]

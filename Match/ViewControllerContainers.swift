@@ -29,9 +29,10 @@ class ViewControllerContainers: UIViewController {
     @IBOutlet weak var loadMainView: UIView!
     var oppCard:Card = Card()
     var isSolving:Bool = false
+    var initialLoad:Bool = true
     var whoseTurn:String = String() {
         didSet {
-            if (!self.block)
+            if (!self.block && !self.initialLoad)
             {
             let topButtonVC:ViewControllerTopButton = self.childViewControllerWithType(ViewControllerTopButton)!
             let topTextVC:ViewControllerTopText = self.childViewControllerWithType(ViewControllerTopText)!
@@ -130,6 +131,7 @@ class ViewControllerContainers: UIViewController {
     var endOfGame:String = String() {
         didSet {
             if self.endOfGame == self.userID {
+                
                 self.endScreenView.hidden = false
                 self.myOpponentsCard.removeConstraints(self.myOpponentsCard.constraints)
                 self.myOpponentsCard.applySizeConstraintToImageView(self.myOpponentsCard.backImageView)
@@ -146,6 +148,7 @@ class ViewControllerContainers: UIViewController {
                 self.myOpponentsCard.bindFrameToSuperviewBounds()
             }
             if self.endOfGame == self.opponentID {
+                self.updateGameTimer?.invalidate()
                 self.endScreenView.hidden = false
                 self.myOpponentsCard.removeConstraints(self.myOpponentsCard.constraints)
                 self.myOpponentsCard.applySizeConstraintToImageView(self.myOpponentsCard.backImageView)
@@ -165,6 +168,7 @@ class ViewControllerContainers: UIViewController {
         }
     }
     var block:Bool = false
+    var randomize:Bool = true
     @IBOutlet weak var waitingLabel: UILabel!
     @IBOutlet weak var solveLabel: UILabel!
     
@@ -179,35 +183,68 @@ class ViewControllerContainers: UIViewController {
         self.publicDatabase = self.container?.publicCloudDatabase
         self.privateDatabase = self.container?.privateCloudDatabase
    
-
      //   self.whoseTurn = "pause"
         self.game.vC = self
         //Looks for single or multiple taps.
         self.tap = UITapGestureRecognizer(target: self, action: #selector(ViewControllerContainers.dismissKeyboard))
       //  self.tap.cancelsTouchesInView = true
         self.view.addGestureRecognizer(self.tap)
-        let randCardNum:Int = Int(arc4random_uniform(20))
+       
         
-        self.oppCard.personName = self.cards[randCardNum].personName
-        self.oppCard.profilePicture = self.cards[randCardNum].profilePicture
-        self.oppCard.profPicURL = self.cards[randCardNum].profilePictureURL
-        self.oppCard.frontImageView.image = UIImage(named: "oppcard")
-        self.oppCard.applyPositioningConstraintToOppImageView(self.oppCard.frontImageView)
+      //  self.oppCard.personName = self.cards[randCardNum].personName
+      //  self.oppCard.profilePicture = self.cards[randCardNum].profilePicture
+       // self.oppCard.profPicURL = self.cards[randCardNum].profilePictureURL
+       
+        
+        if (self.userID == self.gameID) {
+           
+       
+            self.oppCard.applySizeConstraintToImageView(self.oppCard.backImageView)
+            self.oppCard.applyPositioningConstraintToImageView(self.oppCard.backImageView)
+            self.oppCard.applySizeConstraintToProfImageView(self.oppCard.profImageView)
+            self.oppCard.applyPositioningConstraintToProfImageView(self.oppCard.profImageView)
+            self.oppCard.applySizeConstraintToImageView(self.oppCard.frontImageView)
+            self.oppCard.applyPositioningConstraintToOppImageView(self.oppCard.frontImageView)
+            self.oppCard.setConstraintsUILabel(self.oppCard.personNameLabel)
+     self.oppCard.frontImageView.image = UIImage(named: "oppcard")
+        
        
         //cards[randCardNum]
         self.childViewControllerWithType(ViewControllerBase)!.oppCardView.addSubview(oppCard)
         
-       
-        dispatch_async(dispatch_get_main_queue()) {
-            self.saveYourCard()
-        }
-        
+    
       
         self.oppCard.bindFrameToSuperviewBounds()
+        }
+        else if self.oppCard.personName != "" {
+            self.oppCard.applySizeConstraintToImageView(self.oppCard.backImageView)
+            self.oppCard.applyPositioningConstraintToImageView(self.oppCard.backImageView)
+            self.oppCard.applySizeConstraintToProfImageView(self.oppCard.profImageView)
+            self.oppCard.applyPositioningConstraintToProfImageView(self.oppCard.profImageView)
+            self.oppCard.applySizeConstraintToImageView(self.oppCard.frontImageView)
+            self.oppCard.applyPositioningConstraintToOppImageView(self.oppCard.frontImageView)
+            self.oppCard.setConstraintsUILabel(self.oppCard.personNameLabel)
+            self.oppCard.frontImageView.image = UIImage(named: "oppcard")
+            
+            
+            //cards[randCardNum]
+            self.childViewControllerWithType(ViewControllerBase)!.oppCardView.addSubview(oppCard)
+            
+            
+            
+            self.oppCard.bindFrameToSuperviewBounds()
+        }
+        else  {
+            self.childViewControllerWithType(ViewControllerBase)!.oppCardView.hidden = true
+        }
         self.updateGameTimer = NSTimer.scheduledTimerWithTimeInterval(2, target: self.game, selector: #selector(Game.updateRecord), userInfo: nil, repeats: true)
-    
+
     }
-    
+     override func viewWillAppear(animated: Bool) {
+        self.updateGameTimer?.invalidate()
+        self.updateGameTimer = NSTimer.scheduledTimerWithTimeInterval(2, target: self.game, selector: #selector(Game.updateRecord), userInfo: nil, repeats: true)
+
+    }
     func turnButtonOff(button:UIButton) {
         button.userInteractionEnabled = false
         button.hidden = false
@@ -220,7 +257,7 @@ class ViewControllerContainers: UIViewController {
         button.alpha = 1.0
     }
     func showTopButtonVC() {
-        let notHiddenHeight:CGFloat = self.titleContainer.frame.size.height
+      //  let notHiddenHeight:CGFloat = self.titleContainer.frame.size.height
         UIView.animateWithDuration(0.3, delay: 0, options: UIViewAnimationOptions.CurveEaseOut, animations:
             {
                 self.topButtonContainer.frame.origin.y = 0
@@ -230,7 +267,7 @@ class ViewControllerContainers: UIViewController {
                 })
     }
     func showTopTextVC() {
-        let notHiddenHeight:CGFloat = self.titleContainer.frame.size.height
+ //       let notHiddenHeight:CGFloat = self.titleContainer.frame.size.height
         UIView.animateWithDuration(0.3, delay: 0, options: UIViewAnimationOptions.CurveEaseOut, animations: {
             self.topTextContainer.frame.origin.y = 0
             self.setLabel()
@@ -273,7 +310,7 @@ class ViewControllerContainers: UIViewController {
         self.updateGameTimer = nil
     }
     func saveYourCard() {
-        print("SAVING CARD")
+       /* print("SAVING CARD")
         let predicate = NSPredicate(format: "gameID == '\(self.gameID)'")
         var playerString:String = "player2"
         if self.gameID == self.userID {
@@ -307,7 +344,7 @@ class ViewControllerContainers: UIViewController {
             
             
         })
-    
+    */
     
     }
     func solveButtonDisabled() {
@@ -343,11 +380,12 @@ class ViewControllerContainers: UIViewController {
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         // you can set this name in 'segue.embed' in storyboard
         self.game.gameID = self.gameID
-       
+        
         self.game.updateRecord()
         
         if segue.identifier == "showBoardContainer" {
             let connectContainerViewController = segue.destinationViewController as! ViewController
+            connectContainerViewController.gameModel.randomize = self.randomize
             connectContainerViewController.gameModel.cards = self.cards
             self.containerViewController = connectContainerViewController
             self.containerViewController?.gameID = self.gameID
