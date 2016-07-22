@@ -13,4 +13,5 @@ struct CardStruct
     var profilePicture:UIImage = UIImage()
     var personName:String = String()
     var profilePictureURL:String = String()
+    var isFlipped:Bool = false
 }

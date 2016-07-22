@@ -76,6 +76,8 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
     var invitingThisCellOpponentID:String = String()
     var refreshTimer:NSTimer?
     var friendFriendIDsCount = 0
+    var gameNames = [String]()
+    var gameURLs = [String]()
     @IBOutlet weak var deleteGameButton: UIButton!
     @IBOutlet weak var collectionViewFriends: UICollectionView!
     @IBOutlet weak var loadingView: UIView!
@@ -91,7 +93,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
     
     var sendThisGameID:String = String()
     
-    
+    var gameIDsIDs:[String] = [String]()
     
     
     var timer:NSTimer!
@@ -176,7 +178,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
             return self.recordInvites.count
         }
         else if (tableView == self.tableViewGames) {
-            return self.gameIDs.count
+            return self.gameIDsIDs.count
         }
         return self.myFriendsOnApp.count
     }
@@ -197,12 +199,12 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
         }
         if (tableView == self.tableViewGames) {
             let cell:GameListCell = tableView.dequeueReusableCellWithIdentifier("cellGame")! as! GameListCell
-            cell.textView.text = self.gameIDs[indexPath.row]
+            cell.textView.text = self.gameNames[indexPath.row]
             
             
-            //let data = NSData(contentsOfURL: NSURL(string: self.inviteFriendURLs[indexPath.row])!)
+            let data = NSData(contentsOfURL: NSURL(string: self.gameURLs[indexPath.row])!)
            
-            //cell.profPicView.image = (UIImage(data: data!)! as UIImage)
+            cell.profPicView.image = (UIImage(data: data!)! as UIImage)
             
             
            
@@ -294,6 +296,9 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                                 var card:CardStruct = CardStruct()
                                 card.profilePictureURL = cardStructProfilePictureList[i]
                                 card.personName = cardStructPersonNameList[i]
+                                if playerBoard[i] == 0 {
+                                    card.isFlipped = true
+                                }
                                 let data = NSData(contentsOfURL: NSURL(string: card.profilePictureURL)!)
                                 card.profilePicture = UIImage(data: data!)! as UIImage
                                 
@@ -540,6 +545,9 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                     let dictData:AnyObject = dict["data"]!
                     let dictDataDict:NSArray = dictData as! NSArray
                     //let gameIDs:[String] = self.getGameIDs()
+                    self.gameIDsIDs.removeAll(keepCapacity: false)
+                    self.gameNames.removeAll(keepCapacity: false)
+                    self.gameURLs.removeAll(keepCapacity: false)
                     for friend in dictDataDict {
                         let friendDict = friend as! [String: AnyObject]
                         let friendID:String = String(friendDict["id"]!)
@@ -550,8 +558,14 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                             self.myFriendsOnAppIDs.append(friendID)
                             self.myFriendsOnAppURLs.append(friendPic)
                         }
+                        
+                        if (gameIDs.contains(friendID)) {
+                            self.gameIDsIDs.append(friendID)
+                            self.gameNames.append(friendName)
+                            self.gameURLs.append(friendPic)
+                        }
                     }
-              //      self.tableViewFriends.reloadData()
+                    self.tableViewGames.reloadData()
                     self.collectionViewFriends.reloadData()
                 }
             }
@@ -607,6 +621,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                 for record in records! {
                 ids.append(record.objectForKey("player2") as! String)
                 ids.append(record.objectForKey("gameID") as! String)
+                    
                     self.gameIDs.append(record.objectForKey("gameID") as! String)
                 }
                 

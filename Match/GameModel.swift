@@ -23,6 +23,7 @@ class GameModel: NSObject {
             // place card objects into the array
             let card:Card = Card()
             card.profilePicture = cards[index - 1].profilePicture
+            card.isFlipped = cards[index - 1].isFlipped
             card.personName = cards[index - 1].personName
             card.profPicURL = cards[index - 1].profilePictureURL
             print(card.personName)
@@ -44,7 +45,7 @@ class GameModel: NSObject {
         }
         }
         //self.setFacebookProfiles(generatedCards)
-
+        
         return generatedCards
     }
     
