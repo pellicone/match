@@ -16,40 +16,7 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="background" translatesAutoresizingMaskIntoConstraints="NO" id="pMT-H1-X06">
-                                <rect key="frame" x="0.0" y="0.0" width="240" height="128"/>
-                            </imageView>
-                        </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                        <constraints>
-                            <constraint firstAttribute="trailing" secondItem="pMT-H1-X06" secondAttribute="trailing" id="VlK-r2-Tug"/>
-                            <constraint firstItem="pMT-H1-X06" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="bYF-fK-grC"/>
-                            <constraint firstItem="pMT-H1-X06" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="epD-a5-8xW"/>
-                            <constraint firstAttribute="bottom" secondItem="pMT-H1-X06" secondAttribute="bottom" id="uac-ZD-BpY"/>
-                        </constraints>
-                        <variation key="default">
-                            <mask key="subviews">
-                                <exclude reference="pMT-H1-X06"/>
-                            </mask>
-                            <mask key="constraints">
-                                <exclude reference="VlK-r2-Tug"/>
-                                <exclude reference="bYF-fK-grC"/>
-                                <exclude reference="epD-a5-8xW"/>
-                                <exclude reference="uac-ZD-BpY"/>
-                            </mask>
-                        </variation>
-                        <variation key="heightClass=compact">
-                            <mask key="subviews">
-                                <include reference="pMT-H1-X06"/>
-                            </mask>
-                            <mask key="constraints">
-                                <include reference="VlK-r2-Tug"/>
-                                <include reference="bYF-fK-grC"/>
-                                <include reference="epD-a5-8xW"/>
-                                <include reference="uac-ZD-BpY"/>
-                            </mask>
-                        </variation>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -57,7 +24,4 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="background" width="3066" height="1723"/>
-    </resources>
 </document>

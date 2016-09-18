@@ -7,24 +7,24 @@
 //
 
 import UIKit
-import CloudKit
-
+//import CloudKit
+import Parse
 class ViewControllerTopButton: UIViewController , UITextFieldDelegate {
     @IBOutlet var topButtonView: UIView!
     @IBOutlet weak var questionTextField: UITextField!
     @IBOutlet weak var button: UIButton!
-    var container:CKContainer?
-    var publicDatabase:CKDatabase?
-    var privateDatabase:CKDatabase?
+   // var container:CKContainer?
+   // var publicDatabase:CKDatabase?
+   // var privateDatabase:CKDatabase?
     var gameID:String = String()
     var buttonPressed:Bool = false
    
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        self.container = CKContainer.defaultContainer()
-        self.publicDatabase = self.container?.publicCloudDatabase
-        self.privateDatabase = self.container?.privateCloudDatabase
+   //     self.container = CKContainer.defaultContainer()
+   //     self.publicDatabase = self.container?.publicCloudDatabase
+   //     self.privateDatabase = self.container?.privateCloudDatabase
         self.questionTextField.delegate = self
         self.topButtonView.addDropShadowToView(self.topButtonView)
         self.button.addTarget(self, action: #selector(ViewControllerTopButton.updateQuestionTextNoError), forControlEvents: UIControlEvents.TouchUpInside)
@@ -48,6 +48,67 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate {
         if questionTextField.text != ""
         {
             print("Updating question text")
+            
+            
+            let parseACL:PFACL = PFACL()
+            parseACL.publicReadAccess = true
+            parseACL.publicWriteAccess = true
+            let query = PFQuery(className:"Game")
+            query.whereKey("gameID", equalTo: parentVC.gameID)
+            query.whereKey("player2", equalTo: parentVC.player2)
+            parentVC.questionText = self.questionTextField.text!
+            query.findObjectsInBackgroundWithBlock {
+                (objects: [PFObject]?, error: NSError?) -> Void in
+                
+                if error == nil {
+                    // The find succeeded.
+                    print("Successfully retrieved \(objects!.count) scores.")
+                    // Do something with the found objects
+                    if let objects = objects {
+                        if objects.count > 0 {
+                            let gameRecord = objects[0]
+                            gameRecord.ACL = parseACL
+                         
+                                dispatch_async(dispatch_get_main_queue())
+                                {
+                                    
+                                    
+                                        print("updateText")
+                                        gameRecord["questionText"] = self.questionTextField.text
+                                        gameRecord["whoseTurn"] = "\(parentVC.userID)waiting"
+                                    gameRecord.saveInBackgroundWithBlock { (success, error) -> Void in
+                                        if error == nil
+                                        {
+                                            dispatch_async(dispatch_get_main_queue())
+                                            {
+                                                parentVC.updateGameTimer?.invalidate()
+                                                parentVC.updateGameTimer = nil
+                                                parentVC.updateGameTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: parentVC.game, selector: #selector(Game.updateRecord), userInfo: nil, repeats: true)
+                                                parentVC.block = false
+                                                
+                                                PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": parentVC.opponentID , "message": "It's your turn to respond to \(parentVC.userName)!"])
+                                            }
+                                        }
+                                        else
+                                        {
+                                            self.updateQuestionText((error?.localizedDescription)!)
+                                        }
+                                    }
+                            }
+                            
+                                    
+                        }
+                    }
+                }
+                 else {
+                    self.updateQuestionText((error?.localizedDescription)!)
+
+                    // Log details of the failure
+                    print("Error: \(error!) \(error!.userInfo)")
+                }
+            }
+            
+            /*
             let predicate = NSPredicate(format: "gameID == '\(parentVC.gameID)'")
             parentVC.questionText = self.questionTextField.text!
             self.publicDatabase!.performQuery(CKQuery(recordType: "Game", predicate: predicate), inZoneWithID: nil, completionHandler:
@@ -91,6 +152,7 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate {
                         }
                     }
                 })
+ */
         }
     }
     

@@ -8,18 +8,18 @@
 
 import UIKit
 import FBSDKCoreKit
-import CloudKit
+//import CloudKit
 import Parse
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    var myViewController: ViewControllerFriends!
+    weak var myViewController: ViewControllerFriends!
     
-    var container:CKContainer?
-    var publicDatabase:CKDatabase?
-    var privateDatabase:CKDatabase?
+   // var container:CKContainer?
+   // var publicDatabase:CKDatabase?
+   // var privateDatabase:CKDatabase?
       func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // **********************************************************************************************
         // PARSE ADDITION
@@ -71,21 +71,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 PFAnalytics.trackAppOpenedWithLaunchOptions(launchOptions)
             }
         }
-        if application.respondsToSelector(#selector(UIApplication.registerUserNotificationSettings(_:))) {
-           // let userNotificationTypes = [UIUserNotificationType.Alert, UIUserNotificationType.Badge, UIUserNotificationType.Sound]
-            let settings = UIUserNotificationSettings(forTypes: [UIUserNotificationType.Alert, UIUserNotificationType.Badge, UIUserNotificationType.Sound], categories: nil)
-            application.registerUserNotificationSettings(settings)
-            application.registerForRemoteNotifications()
+
+        let settings = UIUserNotificationSettings(forTypes: [.Alert, .Sound, .Badge], categories: nil)
+        UIApplication.sharedApplication().registerUserNotificationSettings(settings)
+        UIApplication.sharedApplication().registerForRemoteNotifications()
             
-            print("register")
-            
+ 
+        if let launchOptions = launchOptions as? [String : AnyObject] {
+            if let notificationDictionary = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey] as? [NSObject : AnyObject] {
+ //               self.application(application, didReceiveRemoteNotification: notificationDictionary)
+            }
         }
-        else {
-        //    let types = [UIRemoteNotificationType.Badge, UIRemoteNotificationType.Alert, UIRemoteNotificationType.Sound]
-          //  application.registerForRemoteNotificationTypes([UIRemoteNotificationType.Badge, UIRemoteNotificationType.Alert, UIRemoteNotificationType.Sound])
-        }
-        
-        initializeNotificationServices()
+    //    initializeNotificationServices()
        // self.myViewController.refreshInvites()
         return FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
     }
@@ -101,33 +98,49 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
      
       
     }
-    func initializeNotificationServices() -> Void {
-      //_gs = UIUserNotificationSettings(forTypes: [ .Sound, .Alert, .Badge], categories: nil)
-       // UIApplication.sharedApplication().registerUserNotificationSettings(settings)
-        
-        print("initialize")
+    
+
+ //   func initializeNotificationServices() -> Void {
+//        let settings = UIUserNotificationSettings(forTypes: [.Sound, .Alert, .Badge], categories: nil)
+//        UIApplication.sharedApplication().registerUserNotificationSettings(settings)
         
         // This is an asynchronous method to retrieve a Device Token
         // Callbacks are in AppDelegate.swift
         // Success = didRegisterForRemoteNotificationsWithDeviceToken
         // Fail = didFailToRegisterForRemoteNotificationsWithError
-        UIApplication.sharedApplication().registerForRemoteNotifications()
-    }
-
-    
-    func application(application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: NSData) {
+ //       UIApplication.sharedApplication().registerForRemoteNotifications()
+//    }
+    func clearBadges() {
         let installation = PFInstallation.currentInstallation()
+        installation.badge = 0
+        installation.saveInBackgroundWithBlock { (success, error) -> Void in
+            if success {
+               // println("cleared badges")
+                UIApplication.sharedApplication().applicationIconBadgeNumber = 0
+            }
+            else {
+              //  println("failed to clear badges")
+            }
+        }
+    }
+    func application(application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: NSData) {
+        print("device token: \(deviceToken.description)")
+        let installation = PFInstallation.currentInstallation()
+        installation["user"] = PFUser.currentUser()
         installation.setDeviceTokenFromData(deviceToken)
         installation.saveInBackground()
-        print("didRegisterForRemoteNotificationsWithDeviceToken")
+
         
     }
     
-    
+
     func application(application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: NSError) {
+        
+        
         if error.code == 3010 {
             print("Push notifications are not supported in the iOS Simulator.\n")
         } else {
+            UIApplication.sharedApplication().registerForRemoteNotifications()
             print("application:didFailToRegisterForRemoteNotificationsWithError: %@\n", error)
         }
     }
@@ -145,42 +158,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(application: UIApplication) {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-     
+       
         print("aPP will enter bg NOTIFICATION")
+        clearBadges()
         
     }
 
     func applicationWillEnterForeground(application: UIApplication) {
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
-        if (self.myViewController != nil) {
+        //if (self.myViewController != nil) {
          //   dispatch_async(dispatch_get_main_queue())
          //   {
-                print("REMOTE NOTIFICATION")
-                self.myViewController.refreshInvites()
+             //   print("REMOTE NOTIFICATION")
+             //   self.myViewController.refreshInvites()
            // }
-        }
+        //}
     }
 
     func applicationDidBecomeActive(application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        let installation = PFInstallation.currentInstallation()
-        if installation.badge != 0 {
-            installation.badge = 0
-        }
-        installation.saveEventually()
+        clearBadges()
         FBSDKAppEvents.activateApp()
-        if (self.myViewController != nil) {
+        //if (self.myViewController != nil) {
            // dispatch_async(dispatch_get_main_queue())
           //  {
            //     print("REMOTE NOTIFICATION")
-                self.myViewController.refreshInvites()
+           //     self.myViewController.refreshInvites()
           //  }
-        }
+        //}
     }
 
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-     
+       
     }
 
     

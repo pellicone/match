@@ -7,31 +7,35 @@
 //
 
 import UIKit
-import CloudKit
+//import CloudKit
 import Parse
 class ViewControllerInvite: UIViewController {
-    var container:CKContainer?
-    var publicDatabase:CKDatabase?
-    var privateDatabase:CKDatabase?
+   // var container:CKContainer?
+   // var publicDatabase:CKDatabase?
+   // var privateDatabase:CKDatabase?
     var userID:String?
     var opponentID:String?
-    var gameRecord:CKRecord?
+    var gameRecord:PFObject?
      var cards:[CardStruct] = [CardStruct]()
     var myTimer:NSTimer?
-    var sendingVC:ViewControllerFriends?
+    var opponentName:String?
+    var userName:String?
+    weak var sendingVC:ViewControllerFriends?
     
     @IBOutlet weak var cancelButton: UIButton!
+    @IBOutlet weak var waitingLabel: UILabel!
   
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.container = CKContainer.defaultContainer()
-        self.publicDatabase = self.container?.publicCloudDatabase
-        self.privateDatabase = self.container?.privateCloudDatabase
+     //   self.container = CKContainer.defaultContainer()
+     //   self.publicDatabase = self.container?.publicCloudDatabase
+     //   self.privateDatabase = self.container?.privateCloudDatabase
         print("ViewControllerInvite")
+        
         print(self.userID)
         self.cancelButton.addTarget(self, action: #selector(ViewControllerInvite.cancelButtonAction), forControlEvents: UIControlEvents.TouchUpInside)
         self.waitForInviteAccept()
-           self.myTimer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: #selector(ViewControllerInvite.waitForInviteAccept), userInfo: nil, repeats: true)
+           self.myTimer = NSTimer.scheduledTimerWithTimeInterval(2, target: self, selector: #selector(ViewControllerInvite.waitForInviteAccept), userInfo: nil, repeats: true)
         
        
         
@@ -41,7 +45,12 @@ class ViewControllerInvite: UIViewController {
          
       //             // Do any additional setup after loading the view.
     }
-
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        dispatch_async(dispatch_get_main_queue()) {
+            self.waitingLabel.text = "Waiting for \(self.opponentName!) to accept..."
+        }
+    }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -59,6 +68,7 @@ class ViewControllerInvite: UIViewController {
     func cancelButtonAction() {
         let query = PFQuery(className:"GameInstance")
         query.whereKey("userEmail", equalTo: self.userID!)
+        query.whereKey("opponentEmail", equalTo: self.opponentID!)
         query.findObjectsInBackgroundWithBlock {
             (objects: [PFObject]?, error: NSError?) -> Void in
             
@@ -124,13 +134,62 @@ class ViewControllerInvite: UIViewController {
     
     
     override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
         self.myTimer!.invalidate()
         self.myTimer = nil
+        print("View will disappear")
+   
     }
+    
+    override func viewDidDisappear(animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+    }
+    
     func waitForInviteAccept() {
         if (self.gameRecord == nil){
             print("Waiting..")
-        let predicate = NSPredicate(format: "player1 == '\(self.opponentID!)'")
+            
+            let parseACL:PFACL = PFACL()
+            parseACL.publicReadAccess = true
+            parseACL.publicWriteAccess = true
+            let query = PFQuery(className:"Game")
+            query.whereKey("player1", equalTo: self.opponentID!)
+            query.whereKey("player2", equalTo: self.userID!)
+            query.findObjectsInBackgroundWithBlock {
+                (objects: [PFObject]?, error: NSError?) -> Void in
+                
+                if error == nil {
+                    // The find succeeded.
+                    print("Successfully retrieved \(objects!.count) scores.")
+                    // Do something with the found objects
+                    if objects != nil {
+                        
+                        // No error, go through the records
+                        
+                        dispatch_after(3, dispatch_get_main_queue()) {
+                            if (objects?.count > 0)
+                            {
+                                objects![0].ACL = parseACL
+                                self.gameRecord = objects![0]
+                                
+                            }
+                            
+                        }
+                        
+                    
+
+                    }
+                } else {
+                    // Log details of the failure
+                    print("Error: \(error!) \(error!.userInfo)")
+                }
+            }
+
+            
+            
+            
+     /*   let predicate = NSPredicate(format: "player1 == '\(self.opponentID!)'")
         
         self.publicDatabase!.performQuery(CKQuery(recordType: "Game", predicate: predicate), inZoneWithID: nil, completionHandler: { (records:[CKRecord]?, error:NSError?) in
             
@@ -154,7 +213,7 @@ class ViewControllerInvite: UIViewController {
             }
             
             
-        })
+        })*/
         }
         else {
             self.myTimer?.invalidate()
@@ -197,6 +256,9 @@ class ViewControllerInvite: UIViewController {
             destination0VC.cards = cards
             destination0VC.gameID = self.opponentID!
             destination0VC.userID = self.userID!
+            destination0VC.player2 = self.userID!
+            destination0VC.opponentName = self.opponentName!
+            destination0VC.userName = self.userName!
             self.deleteOnGameStart()
         }
     }

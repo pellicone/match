@@ -10,6 +10,7 @@ import UIKit
 
 class ViewControllerTitle: UIViewController {
     @IBOutlet weak var whiteView: UIView!
+    @IBOutlet weak var titleLabel: UILabel!
     override func viewDidLoad() {
         self.whiteView.addDropShadowToView(self.whiteView)
     }

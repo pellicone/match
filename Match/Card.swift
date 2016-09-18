@@ -18,7 +18,8 @@ class Card: UIView {
     var personName:String = String("") {
         didSet {
             self.personNameLabel.text = self.personName
-            self.personNameLabel.font = UIFont(name: "AvenirNext-Medium", size: 9.0)
+            self.personNameLabel.font = UIFont(name: "AvenirNext-Medium", size: 9)
+            self.personNameLabel.adjustsFontSizeToFitWidth = true
             self.personNameLabel.numberOfLines = 2
             self.personNameLabel.textAlignment = NSTextAlignment.Center
             print(self.personNameLabel.text!)
@@ -207,6 +208,35 @@ class Card: UIView {
         self.addConstraints([widthConstraint, heightConstraint, verticalConstraint, horizontalConstraint])
      
     }
+    
+    func setConstraintsUILabelOppCard(imageView:UILabel)
+    {
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        //  imageView.contentMode = UIViewContentMode.ScaleAspectFill;
+        //  imageView.clipsToBounds = true;
+        // TODO: add the imageview to the view
+        // self.addSubview(imageView)
+        // TODO: set constrains for the imageview
+        //   let heightConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Height, relatedBy: NSLayoutRelation.Equal, toItem: superview, attribute: NSLayoutAttribute.Width, multiplier: 1, constant: Card.cardWidth * 0.88)
+        //  let widthConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Width, relatedBy: NSLayoutRelation.Equal, toItem: superview, attribute: NSLayoutAttribute.Width, multiplier: 1, constant: Card.cardWidth * 0.88)
+        //   imageView.addConstraints([heightConstraint, widthConstraint])
+        //  imageView.bindFrameToSuperviewBounds1()
+        
+        let heightConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Height, relatedBy: NSLayoutRelation.Equal, toItem: self.frontImageView, attribute: NSLayoutAttribute.Height, multiplier: 0.24, constant: 0)
+        
+        let widthConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Width, relatedBy: NSLayoutRelation.Equal, toItem: self.frontImageView, attribute: NSLayoutAttribute.Width, multiplier: 1, constant: -12)
+        
+        
+        
+        let verticalConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Top, relatedBy: NSLayoutRelation.Equal, toItem: self.profImageView, attribute: NSLayoutAttribute.Bottom, multiplier: 1, constant: -3)
+        
+        let horizontalConstraint:NSLayoutConstraint = NSLayoutConstraint(item: imageView, attribute: NSLayoutAttribute.Left, relatedBy: NSLayoutRelation.Equal, toItem: self.frontImageView, attribute: NSLayoutAttribute.Left, multiplier: 1, constant: 6)
+        
+        self.addConstraints([widthConstraint, heightConstraint, verticalConstraint, horizontalConstraint])
+        
+    }
+
+    
     
     func setImage() {
         self.frontImageView.image = UIImage(named: "card1")

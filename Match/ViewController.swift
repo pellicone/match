@@ -7,20 +7,22 @@
 //
 
 import UIKit
-import CloudKit
+//import CloudKit
+import Parse
 class ViewController: UIViewController {
     
     var gameModel:GameModel = GameModel()
     var cards:[Card] = [Card]()
     var gameID:String = String()
-    var container:CKContainer?
-    var publicDatabase:CKDatabase?
-    var privateDatabase:CKDatabase?
+  //  var container:CKContainer?
+  //  var publicDatabase:CKDatabase?
+   // var privateDatabase:CKDatabase?
     var boardString:String = String()
     var userID:String = String()
     var thisPlayersBoard:[Int] = [Int]()
     var opponentBoard:[Int] = [Int]()
     var cardViews:[UIView] = [UIView]()
+    var cardHeight:CGFloat = 100
     @IBOutlet weak var contentView: UIView!
     @IBOutlet weak var card00: UIView!
     @IBOutlet weak var card01: UIView!
@@ -45,9 +47,9 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.container = CKContainer.defaultContainer()
-        self.publicDatabase = self.container?.publicCloudDatabase
-        self.privateDatabase = self.container?.privateCloudDatabase
+   //     self.container = CKContainer.defaultContainer()
+   //     self.publicDatabase = self.container?.publicCloudDatabase
+   //     self.privateDatabase = self.container?.privateCloudDatabase
 
         self.cards = gameModel.getCards()
         self.layoutCards()
@@ -115,6 +117,8 @@ class ViewController: UIViewController {
             }
             
         }
+      //  let contentViewHeightConstraint:NSLayoutConstraint = NSLayoutConstraint(item: (self.parentViewController as! ViewControllerContainers).contentView, attribute: NSLayoutAttribute.Height, relatedBy: NSLayoutRelation.Equal, toItem: self.cards[0], attribute: NSLayoutAttribute.Height, multiplier: 4, constant: 20)
+       // self.cardHeight = self.cards[0].frontImageView.frame.size.height
         
     }
    
@@ -132,8 +136,88 @@ class ViewController: UIViewController {
             //let cardThatWasTapped:Card = recognizer.view as! Card
             print("I am guessing that your card is: \(cardThatWasTapped.personName)")
             (self.parentViewController as! ViewControllerContainers).isSolving = false
-           
-            let predicate = NSPredicate(format: "gameID == '\(self.gameID)'")
+            let parseACL:PFACL = PFACL()
+            parseACL.publicReadAccess = true
+            parseACL.publicWriteAccess = true
+            var playerString:String = "player1"
+            if self.gameID == self.userID {
+                playerString = "player2"
+            }
+            let query = PFQuery(className:"Game")
+            query.whereKey("gameID", equalTo: self.gameID)
+            query.whereKey("player2", equalTo: (self.parentViewController as! ViewControllerContainers).player2)
+            query.findObjectsInBackgroundWithBlock {
+                (objects: [PFObject]?, error: NSError?) -> Void in
+                
+                if error == nil {
+                    // The find succeeded.
+                    print("Successfully retrieved \(objects!.count) scores.")
+                    // Do something with the found objects
+                    if let objects = objects {
+                        if objects.count > 0 {
+                           
+                            
+                                let gameRecord = objects[0]
+                                gameRecord.ACL = parseACL
+                                let opponentsCardID:String = gameRecord["\(playerString)CardID"] as! String
+                                let opponentsCardName:String = gameRecord["\(playerString)CardName"] as! String
+                                if opponentsCardID == cardThatWasTapped.profPicURL {
+                                    print("You won!")
+                                    let opponentCard:Card = Card()
+                                    opponentCard.personName = opponentsCardName
+                                    opponentCard.profPicURL = opponentsCardID
+                                    opponentCard.profilePicture = UIImage(data: NSData(contentsOfURL: NSURL(string: opponentsCardID)!)!)!
+                                    (self.parentViewController as! ViewControllerContainers).myOpponentsCard = opponentCard
+                                    
+                                    (self.parentViewController as! ViewControllerContainers).endOfGame = self.userID
+                                    gameRecord["gameEndStatus"] = self.userID
+                                    
+                                } else {
+                                    
+                                    (self.parentViewController as! ViewControllerContainers).solveLabel.hidden = true
+                                    (self.parentViewController as! ViewControllerContainers).waitingLabel.hidden = false
+                                    gameRecord["whoseTurn"] = (self.parentViewController as! ViewControllerContainers).opponentID
+                                    
+                                }
+                                
+                                
+                                gameRecord.saveInBackgroundWithBlock { (success, error) -> Void in
+                                    if error != nil {
+                                        (self.parentViewController as! ViewControllerContainers).isSolving = true
+                                        self.cardTapped(recognizer)
+                                    }
+                                    else {
+                                        
+                                        dispatch_async(dispatch_get_main_queue()) {
+                                            print("starting the timer up")
+                                            if (!cardThatWasTapped.isFlipped)
+                                            {self.cardTapped(recognizer)
+                                            }
+                                            if opponentsCardID != cardThatWasTapped.profPicURL {
+                                                (self.parentViewController as! ViewControllerContainers).updateGameTimer?.invalidate()
+                                                (self.parentViewController as! ViewControllerContainers).updateGameTimer = nil
+                                                (self.parentViewController as! ViewControllerContainers).updateGameTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: (self.parentViewController as! ViewControllerContainers).game, selector: #selector(Game.updateRecord), userInfo: nil, repeats: true)
+                                            }
+                                        }
+                                        
+                                    }
+                                    let containerVC = (self.parentViewController as! ViewControllerContainers)
+                                    PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": containerVC.opponentID , "message": "\(containerVC.userName) just went for the win!"])
+                                    print("push")}
+             
+                                    
+                                
+                                
+                            }
+
+                            
+                            
+                            
+                        }
+                    
+                }
+            }
+        /*let predicate = NSPredicate(format: "gameID == '\(self.gameID)'")
             var playerString:String = "player1"
             if self.gameID == self.userID {
                 playerString = "player2"
@@ -201,14 +285,114 @@ class ViewController: UIViewController {
                 
                 
             })
-
+*/
         }
+ 
         
         
     }
     
     func updatePlayerBoard() {
+        //***************************************
+        //* Users player board
+        //***************************************
+        let parseACL:PFACL = PFACL()
+        parseACL.publicReadAccess = true
+        parseACL.publicWriteAccess = true
+        let queryBoard = PFQuery(className:"PlayerBoard")
+        queryBoard.whereKey("gameID", equalTo: (self.gameID + (self.parentViewController as! ViewControllerContainers).player2))
+        queryBoard.whereKey("playerID", equalTo: self.userID)
+        queryBoard.findObjectsInBackgroundWithBlock {
+            (objects: [PFObject]?, error: NSError?) -> Void in
+            if error == nil {
+                let minNum:Int = min(self.cards.count, self.cardViews.count)
+                
+               // var userBoardRecord =
+                 //   PFObject(className: "PlayerBoard")
+            
+                var boardTemp:[Int] = [Int](count: minNum, repeatedValue: 0)
+               // var userBoardRecord = PFObject(className: "PlayerBoard")
+                if objects!.count > 0 {
+                    let userBoardRecord = objects![0]
+                    boardTemp = userBoardRecord["board"] as! [Int]
+                
+                                    userBoardRecord.ACL = parseACL                //var boardTemp:[Int] = userBoardRecord["board"] as! [Int]
+                
+                for i in 0...minNum - 1 {
+                    if (self.cards[i].isFlipped) {
+                        boardTemp[i] = 0
+                    }
+                    else {
+                        boardTemp[i] = 1
+                    }
+                }
+                self.thisPlayersBoard = boardTemp
+   
+                userBoardRecord["board"] = self.thisPlayersBoard
+                userBoardRecord["playerID"] = self.userID
+                userBoardRecord["gameID"] = self.gameID + (self.parentViewController as! ViewControllerContainers).player2
+                
+                userBoardRecord.saveInBackgroundWithBlock { (success, error) -> Void in
+                    //PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": opponentEmail , "message": "\(self.userName) wants to play Guesses with you!"])
+                    print("push")}
+            }
+                }
+        }
+        
+        
+        
         print("Updating game object")
+        
+        
+       /*
+        let query = PFQuery(className:"Game")
+        query.whereKey("gameID", equalTo: self.gameID)
+        query.findObjectsInBackgroundWithBlock {
+            (objects: [PFObject]?, error: NSError?) -> Void in
+            
+            if error == nil {
+                // The find succeeded.
+                print("Successfully retrieved \(objects!.count) scores.")
+                // Do something with the found objects
+                if let objects = objects {
+                    if objects.count > 0 {
+                        let gameRecord = objects[0]
+                        gameRecord.ACL = parseACL
+                        var boardTemp:[Int] = gameRecord[self.boardString] as! [Int]
+                        let minNum:Int = min(self.cards.count, self.cardViews.count)
+                        for i in 0...minNum - 1 {
+                            if (self.cards[i].isFlipped) {
+                                boardTemp[i] = 0
+                            }
+                            else {
+                                boardTemp[i] = 1
+                            }
+                        }
+                        self.thisPlayersBoard = boardTemp
+                        /*  if (self.boardString == "player1Board") {
+                         self.opponentBoard = gameRecord["player2Board"] as! [Int]
+                         }
+                         else {
+                         self.opponentBoard = gameRecord["player1Board"] as! [Int]
+                         }*/
+                        gameRecord[self.boardString] = self.thisPlayersBoard
+                        gameRecord.saveInBackgroundWithBlock { (success, error) -> Void in
+                            //PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": opponentEmail , "message": "\(self.userName) wants to play Guesses with you!"])
+                            print("push")}
+                    }
+                }
+            } else {
+                // Log details of the failure
+                print("Error: \(error!) \(error!.userInfo)")
+            }
+        }
+ */
+        
+        
+        
+        
+        
+        /**********************************************
         let predicate = NSPredicate(format: "gameID == '\(self.gameID)'")
         
         self.publicDatabase!.performQuery(CKQuery(recordType: "Game", predicate: predicate), inZoneWithID: nil, completionHandler: { (records:[CKRecord]?, error:NSError?) in
@@ -250,7 +434,7 @@ class ViewController: UIViewController {
             
             
         })
-        
+        *///**********************************
 
     }
     
