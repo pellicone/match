@@ -1074,9 +1074,10 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
 
     func setMutualFriends(friendFriendIDs:[String], index:Int) -> [CardStruct] {
         var cards:[CardStruct] = [CardStruct]()
+        var cardsBad:[CardStruct] = [CardStruct]()
         self.friendFriendIDsCount = friendFriendIDs.count
         self.progressCount = 0
-        
+        var indexSet:Set<Int> = Set()
         for friendA in friendFriendIDs {
             self.progressCount += 1
             if (self.userFriendIDsDict[friendA] != nil && self.inviteFriendFriendNames[index].contains(self.userFriendIDsDict[friendA]!))
@@ -1089,17 +1090,57 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                 card.profilePictureURL = url
                 let data = NSData(contentsOfURL: NSURL(string: url)!)
                 card.profilePicture = UIImage(data: data!)! as UIImage
-                
+                indexSet.insert(index)
                 cards.append(card)
                     self.progressCount += 1
                 
             }
         }
-       
+        
+        
+        
+        
         self.timer.invalidate()
         if (cards.count >= 20) {
             self.randListSize = cards.count
         }//}
+        else {
+         
+           // for friendA in friendFriendIDs {
+                
+                while indexSet.count < 20 && (self.userFriendURLs.count > 0)
+                {
+                    var card:CardStruct = CardStruct()
+                    var randIndex = Int(arc4random_uniform(UInt32(self.userFriendURLs.count)))
+                    
+                    while (indexSet.contains(randIndex))
+                    {
+                        randIndex = Int(arc4random_uniform(UInt32(self.userFriendURLs.count)))
+                    }
+                    
+                    let index:Int = randIndex
+                    
+                    let url:String = self.userFriendURLs[index]
+                    card.personName = self.userFriends[index]
+                    card.profilePictureURL = url
+                    let data = NSData(contentsOfURL: NSURL(string: url)!)
+                    card.profilePicture = UIImage(data: data!)! as UIImage
+                    if (!friendFriendIDs.contains(url)) {
+                        cardsBad.append(card)
+                        indexSet.insert(index)
+                    }
+                }
+            
+
+            var n:Int = 0;
+            while (cards.count < 20) {
+                self.progressCount += 1
+                cards.append(cardsBad[n])
+                n += 1
+            }
+            PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": self.invitingThisCellOpponentID , "message": "You don't have enough mutual friends with \(self.userName), so you may not know everyone featured."])
+            self.randListSize = cards.count
+        }
         return cards
     }
     
