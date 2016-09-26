@@ -22,8 +22,14 @@ class ViewControllerTopText: UIViewController {
     var gameID:String = String()
     @IBOutlet var yesButton: UIButton!
 
+    @IBOutlet weak var textView: UITextView!
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.setButtonFontSize(self.noButton)
+        self.setButtonFontSize(self.yesButton)
+        self.setButtonFontSize(self.endTurnButton)
+        self.textView.addObserver(self, forKeyPath: "contentSize", options: NSKeyValueObservingOptions.New, context: nil)
+
         self.backView.addDropShadowToView(self.backView)
      //   self.container = CKContainer.defaultContainer()
      //   self.publicDatabase = self.container?.publicCloudDatabase
@@ -31,6 +37,22 @@ class ViewControllerTopText: UIViewController {
         self.yesButton.addTarget(self, action: #selector(ViewControllerTopText.yesButtonPressed), forControlEvents: UIControlEvents.TouchUpInside)
         self.noButton.addTarget(self, action: #selector(ViewControllerTopText.noButtonPressed), forControlEvents: UIControlEvents.TouchUpInside)
         self.endTurnButton.addTarget(self, action: #selector(ViewControllerTopText.endTurnButtonPressedNoError), forControlEvents: UIControlEvents.TouchUpInside)
+        
+    }
+    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+        let textView = object as! UITextView
+        var topCorrect = (textView.bounds.size.height - textView.contentSize.height * textView.zoomScale) / 2
+        topCorrect = topCorrect < 0.0 ? 0.0 : topCorrect;
+        textView.contentInset.top = topCorrect
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        self.textView.removeObserver(self, forKeyPath: "contentSize")
+    }
+    func setButtonFontSize(button:UIButton) {
+        button.titleLabel!.numberOfLines = 1
+        button.titleLabel!.adjustsFontSizeToFitWidth = true
+        button.titleLabel?.lineBreakMode = NSLineBreakMode.ByWordWrapping
     }
     
     func yesButtonPressed()

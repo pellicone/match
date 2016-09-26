@@ -156,7 +156,7 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate {
         }
     }
     
-
+    
     func textFieldDidBeginEditing(textField: UITextField)
     {
         let vC:ViewController = (self.parentViewController as! ViewControllerContainers).childViewControllerWithType(ViewController)!

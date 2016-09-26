@@ -516,18 +516,18 @@ class ViewControllerContainers: UIViewController {
                 print(self.questionText)
                 if ("\(self.opponentID)waiting" == self.whoseTurn) {
                     if (self.questionText == ""){
-                        self.childViewControllerWithType(ViewControllerTopText)?.textLabel.text = ""
+                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = ""
                     }
                     else {
-                        self.childViewControllerWithType(ViewControllerTopText)?.textLabel.text = "Is your person \(self.questionText)?"
+                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = "Is your person \(self.questionText)?"
                     }
                 }
                 else {
                      if (self.questionText.containsString(", my person is")){
-                        self.childViewControllerWithType(ViewControllerTopText)?.textLabel.text = "\(self.questionText)"
+                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = "\(self.questionText)"
                     }
                      else {
-                        self.childViewControllerWithType(ViewControllerTopText)?.textLabel.text = ""
+                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = ""
                     }
                 }
         
