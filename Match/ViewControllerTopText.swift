@@ -260,8 +260,8 @@ class ViewControllerTopText: UIViewController {
         }
         finds.removeAll()
         replaces.removeAll()
-        finds =    ["I",    "yours",        "my",  "your",   "mine", "you"] //(to you)(to me)
-        replaces = ["y*o*u*", "m*i*n*e*", "y*o*u*r*",   "m*y*", "y*o*u*r*s*", "I*"]
+        finds =    ["I am", "I'm", "I", "you're", "you are",   "yours",        "my",  "your",   "mine","ed you", "ed me", "you" ] //(to you)(to me)
+        replaces = ["y*o*u* a*r*e*", "y*o*u* a*r*e*",  "y*o*u*", "I* a*m*", "I* a*m*", "m*i*n*e*", "y*o*u*r*",   "m*y*", "y*o*u*r*s*","e*d* m*e*", "e*d* y*o*u*","I*"]
         for i in 0...finds.count - 1 {
         replaced = (replaced as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
         
@@ -269,8 +269,8 @@ class ViewControllerTopText: UIViewController {
         finds.removeAll()
         replaces.removeAll()
         
-        finds =    ["t*o*", "m*e*", "I*", "y*o*u*r*s*", "y*o*u*r*", "m*y*", "y*o*u*", "m*i*n*e*"]
-        replaces = ["to",  "me", "I",   "yours",  "your", "my", "you",   "mine"]
+        finds =    ["e*d*","t*o*", "m*e*", "I*", "y*o*u*r*s*", "y*o*u*r*", "m*y*", "y*o*u*", "m*i*n*e*", "a*m*", "a*r*e*"]
+        replaces = ["ed","to",  "me", "I",   "yours",  "your", "my", "you",   "mine", "am", "are"]
         for i in 0...finds.count - 1 {
             replaced = (replaced as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
             

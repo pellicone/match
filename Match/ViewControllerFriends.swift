@@ -57,6 +57,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
             if (self.userEmailKey != "") {
                    self.setSubscription()
                     self.deleteAllInvites(self.userEmailKey)
+                self.setUserFriends()
             }
         }
     }
@@ -855,8 +856,8 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
 
     
     func setUserFriends() {
-        let params = ["fields": "picture.type(large),id,email,name,username"]
-        let request = FBSDKGraphRequest(graphPath: "me/invitable_friends?limit=5000", parameters: params)
+        var params = ["fields": "picture.type(large),id,email,name,username"]
+        var request = FBSDKGraphRequest(graphPath: "me/invitable_friends?limit=5000", parameters: params)
        
         request.startWithCompletionHandler { (connection : FBSDKGraphRequestConnection!, result : AnyObject!, error : NSError!) -> Void in
             if error != nil {
@@ -881,16 +882,53 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                         self.userFriendIDsDict["\(friendPic)"] = String(dDict["name"]!)
                         
                     }
+                    params = ["fields": "picture.type(large),id,user_email,name"]
+                    request = FBSDKGraphRequest(graphPath: "me/friends", parameters: params)
+                    
+                    request.startWithCompletionHandler { (connection : FBSDKGraphRequestConnection!, result : AnyObject!, error : NSError!) -> Void in
+                        if error != nil {
+                            _ = error.localizedDescription
+                        }
+                        else if result.isKindOfClass(NSDictionary){
+                            /* Handle response */
+                            if let dict = result as? [String: AnyObject] {
+                                print(dict)
+                                let dictData:AnyObject = dict["data"]!
+                                let dictDataDict:NSArray = dictData as! NSArray
+                                //let gameIDs:[String] = self.getGameIDs()
+                                
+                                for friend in dictDataDict {
+                                    
+                                    let friendDict = friend as! [String: AnyObject]
+                                    let friendID:String = String(friendDict["id"]!)
+                                    let friendName:String = String(friendDict["name"]!)
+                                    let friendPic:String = String(friendDict["picture"]!["data"]!["url"]!!)
+                                    if (self.userFriendIDsDict["\(friendPic)"] == nil ||  self.userFriendIDsDict["\(friendPic)"] != friendName) {
+                                    self.userFriends.append(friendName)
+                                    self.userFriendURLs.append(friendPic)
+                                    self.userFriendIDs.append("\(friendPic)")
+                                    self.userFriendIDsDict["\(friendPic)"] = friendName
+                                    }
+                                }
+                                
+                            }
+                        }
+                        
+                    }
+
+                    
                 }
             }
         }
+        
+        
     }
     
     func setTheMyFriendsOnApp(gameIDss:Set<String>) {
         //self.myFriendsOnApp.removeAll()
         let params = ["fields": "picture.type(large),id,user_email,name"]
         let request = FBSDKGraphRequest(graphPath: "me/friends", parameters: params)
-        
+        var hasChanged = false
         request.startWithCompletionHandler { (connection : FBSDKGraphRequestConnection!, result : AnyObject!, error : NSError!) -> Void in
             if error != nil {
                 _ = error.localizedDescription
@@ -929,10 +967,15 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                             //self.opponentIDs.append(<#T##newElement: Element##Element#>)
                             self.gameNames.append(friendName)
                             self.gameURLs.append(friendPic)
+                            hasChanged = true
                         }
                     }
+                   // if (hasChanged) {
+                        dispatch_async(dispatch_get_main_queue()) {
                     self.tableViewGames.reloadData()
                     self.collectionViewFriends.reloadData()
+                        }
+                  //  }
                 }
             }
 

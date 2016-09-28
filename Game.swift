@@ -88,7 +88,12 @@ class Game: NSObject {
                 // The find succeeded.
                 print("Successfully retrieved \(objects!.count) scores.")
                 // Do something with the found objects
-                if let objects = objects {
+                //if (self.vC != nil && !self.vC!.initialLoad && objects?.count == 0)
+               // {
+                 //   self.vC!.performSegueWithIdentifier("goBackToFriends", sender: self.vC!)
+                   // return
+                //}
+                 if let objects = objects {
                     
                         let gameRecord = objects[0]
                         gameRecord.ACL = parseACL

@@ -74,9 +74,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let settings = UIUserNotificationSettings(forTypes: [.Alert, .Sound, .Badge], categories: nil)
         UIApplication.sharedApplication().registerUserNotificationSettings(settings)
-        UIApplication.sharedApplication().registerForRemoteNotifications()
-            
- 
+               UIApplication.sharedApplication().registerForRemoteNotifications()
+        dispatch_async(dispatch_get_main_queue()){
+PFNetworkActivityIndicatorManager.sharedManager().enabled = false;
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        }
         if let launchOptions = launchOptions as? [String : AnyObject] {
             if let notificationDictionary = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey] as? [NSObject : AnyObject] {
  //               self.application(application, didReceiveRemoteNotification: notificationDictionary)
