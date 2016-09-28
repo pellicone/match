@@ -29,7 +29,8 @@ class ViewControllerTopText: UIViewController {
         self.setButtonFontSize(self.yesButton)
         self.setButtonFontSize(self.endTurnButton)
         self.textView.addObserver(self, forKeyPath: "contentSize", options: NSKeyValueObservingOptions.New, context: nil)
-
+        
+       
         self.backView.addDropShadowToView(self.backView)
      //   self.container = CKContainer.defaultContainer()
      //   self.publicDatabase = self.container?.publicCloudDatabase
@@ -38,6 +39,11 @@ class ViewControllerTopText: UIViewController {
         self.noButton.addTarget(self, action: #selector(ViewControllerTopText.noButtonPressed), forControlEvents: UIControlEvents.TouchUpInside)
         self.endTurnButton.addTarget(self, action: #selector(ViewControllerTopText.endTurnButtonPressedNoError), forControlEvents: UIControlEvents.TouchUpInside)
         
+    }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+      //  let range = NSMakeRange(0, self.textView.text.characters.count - 1)
+       // self.textView.scrollRangeToVisible(range)
     }
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         let textView = object as! UITextView
@@ -104,11 +110,11 @@ class ViewControllerTopText: UIViewController {
                             var yesOrNoString:String = String()
                             if (yesOrNo == "yes")
                             {
-                                yesOrNoString = "Yes, my person is \(gameRecord["questionText"] as! String)."
+                                yesOrNoString = self.processQuestionText("\(gameRecord["questionText"] as! String)", yes: true)
                             }
                             else
                             {
-                                yesOrNoString = "No, my person is not \(gameRecord["questionText"] as! String)."
+                                yesOrNoString = self.processQuestionText("\(gameRecord["questionText"] as! String)", yes: false)
                             }
                             gameRecord["questionText"] = yesOrNoString
                             gameRecord["whoseTurn"] = "\((self.parentViewController as! ViewControllerContainers).opponentID)waitingfinished"
@@ -208,6 +214,74 @@ class ViewControllerTopText: UIViewController {
             }
         })*/
     }
+    
+    
+    func processQuestionText(str:String, yes:Bool) -> String {
+        var ret = String()
+        var middleWord = "does"
+        if (yes)
+        {
+            ret = "Yes, my person"
+        }
+        else
+        {
+            ret = "No, my person"
+        }
+        
+        var qLead = "Does your person"
+        if (str.containsString("Is your person")) {
+            qLead = "Is your person"
+            middleWord = "is"
+        }
+        else if (str.containsString("Has your person")) {
+            qLead = "Has your person"
+            middleWord = "has"
+        }
+        if (!yes)
+        {
+            middleWord = "\(middleWord) not"
+        }
+        
+       // let str = "Does your person eat food?"
+        let index1 = str.startIndex.advancedBy(qLead.characters.count + 1)
+      
+        var substring1 = str.substringFromIndex(index1)
+           let index2 = substring1.startIndex.advancedBy(substring1.characters.count - 1)
+        substring1 = substring1.substringToIndex(index2)
+        
+        
+        var replaced:String = substring1
+        
+        var finds = ["to you", "to me"] //(to you)(to me)
+        var replaces = ["t*o* m*e*", "t*o* y*o*u*"]
+        for i in 0...finds.count - 1 {
+            replaced = (replaced as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
+            
+        }
+        finds.removeAll()
+        replaces.removeAll()
+        finds =    ["I",    "yours",        "my",  "your",   "mine", "you"] //(to you)(to me)
+        replaces = ["y*o*u*", "m*i*n*e*", "y*o*u*r*",   "m*y*", "y*o*u*r*s*", "I*"]
+        for i in 0...finds.count - 1 {
+        replaced = (replaced as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
+        
+        }
+        finds.removeAll()
+        replaces.removeAll()
+        
+        finds =    ["t*o*", "m*e*", "I*", "y*o*u*r*s*", "y*o*u*r*", "m*y*", "y*o*u*", "m*i*n*e*"]
+        replaces = ["to",  "me", "I",   "yours",  "your", "my", "you",   "mine"]
+        for i in 0...finds.count - 1 {
+            replaced = (replaced as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
+            
+        }
+        
+        ret = "\(ret) \(middleWord) \(replaced)."
+        return ret
+    }
+    
+    
+    
     func endTurnButtonPressedNoError() {
         self.endTurnButtonPressed("")
     }

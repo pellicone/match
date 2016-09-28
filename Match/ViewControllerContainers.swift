@@ -509,6 +509,9 @@ class ViewControllerContainers: UIViewController {
     override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
         return UIInterfaceOrientationMask.Portrait;
     }
+    
+    
+    
     func setLabel() {
         
             
@@ -519,11 +522,11 @@ class ViewControllerContainers: UIViewController {
                         self.childViewControllerWithType(ViewControllerTopText)?.textView.text = ""
                     }
                     else {
-                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = "Is your person \(self.questionText)?"
+                        self.childViewControllerWithType(ViewControllerTopText)?.textView.text = "\(self.questionText)"
                     }
                 }
                 else {
-                     if (self.questionText.containsString(", my person is")){
+                     if (self.questionText.containsString("my person")){
                         self.childViewControllerWithType(ViewControllerTopText)?.textView.text = "\(self.questionText)"
                     }
                      else {
