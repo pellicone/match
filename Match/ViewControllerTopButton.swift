@@ -19,6 +19,8 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate, UIPickerV
    // var privateDatabase:CKDatabase?
     var gameID:String = String()
     var buttonPressed:Bool = false
+    @IBOutlet weak var arrowUp: UIImageView!
+    @IBOutlet weak var arrowDown: UIImageView!
       var pickerData: [String] = [String]()
     var selectedQText:String = String()
     override func viewDidLoad()
@@ -26,11 +28,15 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate, UIPickerV
         super.viewDidLoad()
         self.pickerView.delegate = self
         self.pickerView.dataSource = self
-        self.pickerData = ["Is your person", "Does your person", "Has your person"]
+        self.pickerData = ["Is your person", "Does your person", "Has your person", "Was your person", "Did your person"]
        //     self.container = CKContainer.defaultContainer()
    //     self.publicDatabase = self.container?.publicCloudDatabase
    //     self.privateDatabase = self.container?.privateCloudDatabase
         self.questionTextField.delegate = self
+        dispatch_async(dispatch_get_main_queue()){
+        self.arrowUp.alpha = 0.2
+        self.arrowDown.alpha = 0.7
+        }
         self.topButtonView.addDropShadowToView(self.topButtonView)
         self.button.addTarget(self, action: #selector(ViewControllerTopButton.updateQuestionTextNoError), forControlEvents: UIControlEvents.TouchUpInside)
     }
@@ -54,7 +60,22 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate, UIPickerV
     func pickerView(pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
         return pickerData.count
     }
-    
+    func pickerView(pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        dispatch_async(dispatch_get_main_queue()){
+        if (row == 0) {
+            self.arrowUp.alpha = 0.2
+            self.arrowDown.alpha = 0.7
+        }
+        else if (row == self.pickerData.count - 1) {
+            self.arrowUp.alpha = 0.7
+            self.arrowDown.alpha = 0.2
+        }
+        else {
+            self.arrowUp.alpha = 0.7
+            self.arrowDown.alpha = 0.7
+        }
+        }
+    }
     // The data to return for the row and component (column) that's being passed in
     func pickerView(pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
         return pickerData[row]
@@ -89,8 +110,8 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate, UIPickerV
             query.whereKey("gameID", equalTo: parentVC.gameID)
             query.whereKey("player2", equalTo: parentVC.player2)
             var trimmedQText = self.questionTextField.text!.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
-            var finds = ["fuck", "ass", "bitch", "damn", "cunt", "shit"] //(to you)(to me)
-            var replaces = ["f***", "a**", "b****", "d***", "c***", "s***"]
+            var finds = ["fuck", "bitch", "damn", "cunt", "shit"] //(to you)(to me)
+            var replaces = ["f***", "b****", "d***", "c***", "s***"]
             for i in 0...finds.count - 1 {
                 trimmedQText = (trimmedQText as NSString).stringByReplacingOccurrencesOfString(finds[i], withString: replaces[i])
                 
@@ -127,6 +148,31 @@ class ViewControllerTopButton: UIViewController , UITextFieldDelegate, UIPickerV
                                                 parentVC.block = false
                                                 
                                                 PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": parentVC.opponentID , "message": "It's your turn to respond to \(parentVC.userName)!"])
+                                                let query = PFQuery(className: "TurnRecord")
+                                                query.whereKey("gameID", equalTo: parentVC.gameID)
+                                               
+                                                query.findObjectsInBackgroundWithBlock {
+                                                    (objects: [PFObject]?, error: NSError?) -> Void in
+                                                    if let objects = objects {
+                                                        for object in objects {
+                                                            object.deleteEventually()
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                let parseACL:PFACL = PFACL()
+                                                parseACL.publicReadAccess = true
+                                                parseACL.publicWriteAccess = true
+                                                
+                                                let turnRecord = PFObject(className: "TurnRecord")
+                                                turnRecord.ACL = parseACL
+                                                turnRecord["gameID"] = parentVC.gameID
+                                                turnRecord["playerID"] = parentVC.opponentID
+                                                turnRecord["text"] = "It's your turn to respond to \(parentVC.userName)!"
+                                                
+                                                turnRecord.saveEventually()
+                                                
+                                                
                                             }
                                         }
                                         else

@@ -58,6 +58,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                    self.setSubscription()
                     self.deleteAllInvites(self.userEmailKey)
                 self.setUserFriends()
+                self.deleteResignedGames()
             }
         }
     }
@@ -106,6 +107,9 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
     
     
     weak var timer:NSTimer!
+    
+    
+    
     override func viewDidLoad() {
         
         if (self.presentingViewController != nil) {
@@ -134,7 +138,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
      //   self.publicDatabase = self.container?.publicCloudDatabase
       //  self.privateDatabase = self.container?.privateCloudDatabase
         
-
+        self.sortMyFriendsOnApp()
        
      //   let loginButton = FBSDKLoginButton()
      //   self.view.addSubview(loginButton)
@@ -178,14 +182,14 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                 
                 if self.myFriendsOnApp.count == 0 {
                     
-                    self.noFriendsImageView.alpha = 0.2
+                    self.noFriendsImageView.alpha = 0.05
                     
                 }
                if self.recordInvites.count == 0 {
-                 self.inviteFriendView.alpha = 0.2
+                 self.inviteFriendView.alpha = 0.05
                 }
                 if self.gameNames.count == 0 {
-                    self.gameFriendView.alpha = 0.2
+                    self.gameFriendView.alpha = 0.05
                 }
             })
             
@@ -316,7 +320,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                     
                     if self.recordInvites.count == 0 {
                         
-                        self.inviteFriendView.alpha = 0.2
+                        self.inviteFriendView.alpha = 0.05
                     }
                    
                     
@@ -351,7 +355,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                     
                     if self.gameNames.count == 0 {
                         
-                        self.gameFriendView.alpha = 0.2
+                        self.gameFriendView.alpha = 0.05
                     }
                     
                     
@@ -380,9 +384,27 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
             return cell
         }
         if (tableView == self.tableViewGames) {
-            let cell:GameListCell = tableView.dequeueReusableCellWithIdentifier("cellGame")! as! GameListCell
-            cell.textView.text = self.gameNames[indexPath.row]
             
+            let cell:GameListCell = tableView.dequeueReusableCellWithIdentifier("cellGame")! as! GameListCell
+            
+            if(self.gameIDs.count == self.gameNames.count) {
+            let query = PFQuery(className: "TurnRecord")
+            query.whereKey("gameID", equalTo:self.gameIDs[indexPath.row])
+            query.whereKey("playerID", equalTo: self.userEmailKey)
+            query.findObjectsInBackgroundWithBlock {
+                (objects: [PFObject]?, error: NSError?) -> Void in
+                if objects?.count > 0 {
+                    cell.turnRecord.text = objects![0]["text"] as? String
+                    cell.yourTurn.backgroundColor = UIColor(colorLiteralRed: 0.91, green: 0.26, blue: 0.26, alpha: 1.0)
+                }
+                else {
+                    cell.yourTurn.backgroundColor = UIColor.whiteColor()
+                   cell.turnRecord.text = "Waiting for \(self.gameNames[indexPath.row])..."
+                }
+            }
+            
+            }
+             cell.textView.text = self.gameNames[indexPath.row]
             
             let data = NSData(contentsOfURL: NSURL(string: self.gameURLs[indexPath.row])!)
            
@@ -638,11 +660,28 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
         
     }
     func refreshInvitesButton() {
+        self.deleteResignedGames()
         self.getGameIDs()
+        self.tableViewGames.reloadData()
         self.refreshInvites()
         
+        
     }
-    
+    func deleteResignedGames(){
+        let queryOver = PFQuery(className: "GameOver")
+        queryOver.whereKey("winner", equalTo: self.userEmailKey)
+        queryOver.findObjectsInBackgroundWithBlock {
+            (objects: [PFObject]?, error: NSError?) -> Void in
+         
+                if let objects = objects {
+                    for object in objects {
+                        object.deleteEventually()
+                        
+                    }
+                
+            }
+        }
+    }
     override func viewWillDisappear(animated: Bool) {
         if self.refreshTimer != nil {
         self.refreshTimer?.invalidate()
@@ -670,6 +709,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
          self.refreshTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewControllerFriends.refreshInvitesButton), userInfo: nil, repeats: true)
         self.timer?.invalidate()
         self.timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(ViewControllerFriends.tick), userInfo: nil, repeats: true)
+        
         
     }
     
@@ -714,7 +754,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                 
                 if self.myFriendsOnApp.count == 0 {
                     
-                    self.noFriendsImageView.alpha = 0.2
+                    self.noFriendsImageView.alpha = 0.05
                 }
                
                 
@@ -924,11 +964,12 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
         
     }
     
-    func setTheMyFriendsOnApp(gameIDss:Set<String>) {
+    func setTheMyFriendsOnApp(gameIDss:Dictionary<String,String>) {
         //self.myFriendsOnApp.removeAll()
         let params = ["fields": "picture.type(large),id,user_email,name"]
         let request = FBSDKGraphRequest(graphPath: "me/friends", parameters: params)
         var hasChanged = false
+        let initCount = self.myFriendsOnAppIDs.count
         request.startWithCompletionHandler { (connection : FBSDKGraphRequestConnection!, result : AnyObject!, error : NSError!) -> Void in
             if error != nil {
                 _ = error.localizedDescription
@@ -940,7 +981,9 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                     let dictData:AnyObject = dict["data"]!
                     let dictDataDict:NSArray = dictData as! NSArray
                     //let gameIDs:[String] = self.getGameIDs()
-                    self.gameIDsIDs.removeAll(keepCapacity: false)
+                    //self.gameIDsIDs.removeAll(keepCapacity: false)
+                    var gameIDsIDsTemp = [String]()
+                    var gameIDsOrdered = [String]()
                     //self.opponentIDs.removeAll(keepCapacity: false)
                     self.gameNames.removeAll(keepCapacity: false)
                     self.gameURLs.removeAll(keepCapacity: false)
@@ -949,13 +992,13 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                         let friendID:String = String(friendDict["id"]!)
                         let friendName:String = String(friendDict["name"]!)
                         let friendPic:String = String(friendDict["picture"]!["data"]!["url"]!!)
-                        if (!gameIDss.contains(friendID) && !self.myFriendsOnAppIDs.contains(friendID)) {
+                        if (gameIDss[friendID] == nil && !self.myFriendsOnAppIDs.contains(friendID)) {
                             self.myFriendsOnApp.append(friendName)
                             self.myFriendsOnAppIDs.append(friendID)
                             self.myFriendsOnAppURLs.append(friendPic)
                         }
                         
-                        if (gameIDss.contains(friendID)) {
+                        if (gameIDss[friendID] != nil) {
                             if (self.myFriendsOnAppIDs.contains(friendID)) {
                                 self.myFriendsOnApp.removeAll()
                                 self.myFriendsOnAppIDs.removeAll()
@@ -963,26 +1006,50 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                                 self.setTheMyFriendsOnApp(gameIDss)
                                 print("RESET")
                             }
-                            self.gameIDsIDs.append(friendID)
+                            //gameIDsOrdered.append(ga)
+                            gameIDsOrdered.append(gameIDss[friendID]!)
+                            gameIDsIDsTemp.append(friendID)
                             //self.opponentIDs.append(<#T##newElement: Element##Element#>)
                             self.gameNames.append(friendName)
                             self.gameURLs.append(friendPic)
                             hasChanged = true
                         }
                     }
+                    self.gameIDsIDs = gameIDsIDsTemp
+                    self.gameIDs = gameIDsOrdered
                    // if (hasChanged) {
                         dispatch_async(dispatch_get_main_queue()) {
-                    self.tableViewGames.reloadData()
-                    self.collectionViewFriends.reloadData()
+                //    self.tableViewGames.reloadData()
+                  //  self.collectionViewFriends.reloadData()
                         }
                   //  }
+                }
+                dispatch_async(dispatch_get_main_queue()) {
+                    if (self.myFriendsOnAppIDs.count != initCount) {
+                    self.tableViewGames.reloadData()
+                        
+                        self.sortMyFriendsOnApp()
+                       // self.tableViewGames.reloadData()
+
+                        self.collectionViewFriends.reloadData()
+                    }
                 }
             }
 
         }
         
     }
-    
+    func sortMyFriendsOnApp() {
+        let myFriends = self.myFriendsOnApp
+        let sortedFoo = zip(self.myFriendsOnApp, self.myFriendsOnAppIDs).sort { $0.0 < $1.0 }
+        
+        self.myFriendsOnApp = sortedFoo.map { $0.0 }
+        self.myFriendsOnAppIDs = sortedFoo.map { $0.1 }
+        let sortedFoo2 = zip(myFriends, self.myFriendsOnAppURLs).sort { $0.0 < $1.0 }
+        
+        
+        self.myFriendsOnAppURLs = sortedFoo2.map { $0.1 }
+    }
     func deleteGamesButtonAction() {
         // print(self.userID!)
         
@@ -1023,9 +1090,10 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
         }*/
     }
     
-    func getGameIDs() -> Set<String> {
-        var ids:Set<String> = Set<String>()
-        self.gameIDs.removeAll()
+    func getGameIDs() -> Dictionary<String, String> {
+        var ids:Dictionary<String,String> = Dictionary<String,String>()
+        //self.gameIDs.removeAll()
+        var gameIDsTemp = [String]()
         self.opponentIDs.removeAll()
         let parseACL:PFACL = PFACL()
         parseACL.publicReadAccess = true
@@ -1045,13 +1113,13 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                                 
                                 object2.ACL = parseACL
                                 if (object2["player1"] as! String == self.userEmailKey) {
-                                    ids.insert(object2.objectForKey("player2") as! String)
-                                    self.gameIDs.append(object2.objectForKey("gameID") as! String)
+                                    ids[object2["player2"] as! String] = object2["gameID"] as? String
+                                    gameIDsTemp.append(object2.objectForKey("gameID") as! String)
                                     self.opponentIDs.append(object2["player2"] as! (String))
                                 }
                                 else if (object2["player2"] as! String == self.userEmailKey) {
-                                    ids.insert(object2.objectForKey("player1") as! String)
-                                    self.gameIDs.append(object2.objectForKey("gameID") as! String)
+                                    ids[object2["player1"] as! String] = object2["gameID"] as? String
+                                    gameIDsTemp.append(object2.objectForKey("gameID") as! String)
                                     self.opponentIDs.append(object2["player1"] as! (String))
                                 }
                                 
@@ -1063,6 +1131,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                         }
                        // dispatch_async(dispatch_get_main_queue()) {
                           //  self.tableViewGames.reloadData()
+                        self.gameIDs = gameIDsTemp
                             self.setTheMyFriendsOnApp(ids)
                        // }
                         
@@ -1276,8 +1345,10 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
                 // Log details of the failure
                 print("Error: \(error!) \(error!.userInfo)")
             }
-            self.tableView.reloadData()
-            self.collectionViewFriends.reloadData()
+            dispatch_async(dispatch_get_main_queue()) {
+             self.tableView.reloadData()
+       //     self.collectionViewFriends.reloadData()
+            }
         }
         
         
@@ -1443,6 +1514,17 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
      //       cardStructPersonNameListTemp.append(cardStruct.personName)
      //       cardStructProfilePictureListTemp.append(cardStruct.profilePictureURL)
      //   }
+        let parseACL:PFACL = PFACL()
+        parseACL.publicReadAccess = true
+        parseACL.publicWriteAccess = true
+        
+        let turnRecord = PFObject(className: "TurnRecord")
+        turnRecord.ACL = parseACL
+        turnRecord["gameID"] = self.userEmailKey
+        turnRecord["playerID"] = self.userEmailKey
+        turnRecord["text"] = "Your turn to start the game!"
+        
+        turnRecord.saveEventually()
         var cardStructPersonNameList:[String] = [String]()
         var cardStructProfilePictureList:[String] = [String]()
         
@@ -1471,9 +1553,7 @@ class ViewControllerFriends: UIViewController, FBSDKLoginButtonDelegate, UITable
         }
         
         
-        let parseACL:PFACL = PFACL()
-        parseACL.publicReadAccess = true
-        parseACL.publicWriteAccess = true
+       
                              let record = PFObject(className: "Game")
                         record.ACL = parseACL
         

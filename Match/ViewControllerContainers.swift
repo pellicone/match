@@ -403,6 +403,32 @@ class ViewControllerContainers: UIViewController {
         // print(self.userID!)
         
         PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": self.opponentID , "message": "\(self.userName) resigned!"])
+        let queryTurn = PFQuery(className: "TurnRecord")
+        queryTurn.whereKey("gameID", equalTo: self.gameID)
+        
+        queryTurn.findObjectsInBackgroundWithBlock {
+            (objects: [PFObject]?, error: NSError?) -> Void in
+            if let objects = objects {
+                for object in objects {
+                    object.deleteEventually()
+                }
+            }
+        }
+        
+        
+        let parseACL:PFACL = PFACL()
+        parseACL.publicReadAccess = true
+        parseACL.publicWriteAccess = true
+        
+        let gameOver = PFObject(className: "GameOver")
+        gameOver.ACL = parseACL
+        gameOver["gameID"] = self.gameID
+        gameOver["winner"] = self.opponentID
+        
+        
+        gameOver.saveEventually()
+        
+        
         let query = PFQuery(className: "Game")
         query.whereKey("gameID", equalTo: self.gameID)
         query.whereKey("player2", equalTo: self.player2)
@@ -467,6 +493,17 @@ class ViewControllerContainers: UIViewController {
                 }
             }
         }
+            let query3 = PFQuery(className: "TurnRecord")
+            query3.whereKey("gameID", equalTo: "\(self.gameID)")
+            //  query2.whereKey("gameID", equalTo: self.gameID)
+            query3.findObjectsInBackgroundWithBlock {
+                (objects: [PFObject]?, error: NSError?) -> Void in
+                if let objects = objects {
+                    for object in objects {
+                        object.deleteEventually()
+                    }
+                }
+            }
         }
         else {
            // PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": self.opponentID , "message": "You lost!"])

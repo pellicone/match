@@ -12,6 +12,8 @@ import FBSDKLoginKit
 
 class ViewControllerLogin: UIViewController, FBSDKLoginButtonDelegate {
 
+    @IBOutlet weak var loginView: UIView!
+    @IBOutlet weak var loginButton: UIButton!
     override func viewDidLoad() {
         super.viewDidLoad()
         if FBSDKAccessToken.currentAccessToken() == nil {
@@ -22,16 +24,24 @@ class ViewControllerLogin: UIViewController, FBSDKLoginButtonDelegate {
             return
             
         }
-        let loginButton = FBSDKLoginButton()
-        loginButton.readPermissions = ["public_profile", "email", "user_friends"]
-        loginButton.center = self.view.center
-        loginButton.delegate = self
-        self.view.addSubview(loginButton)
         
-        // Do any additional setup after loading the view.
+        self.loginButton.addTarget(self, action: #selector(btnLoginPressed), forControlEvents: UIControlEvents.TouchUpInside)
+        
+        
+        
+        
     }
-    
-    override func viewDidAppear(animated: Bool) {
+    func btnLoginPressed() {
+        
+        let loginManager = FBSDKLoginManager()
+        loginManager.logInWithReadPermissions(["public_profile"], fromViewController: self, handler: { (response:FBSDKLoginManagerLoginResult!, error: NSError!) in
+            if(error == nil){
+                print("No Error")
+               
+            }
+        })
+    }
+        override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
         if FBSDKAccessToken.currentAccessToken() != nil {
             self.performSegueWithIdentifier("showNew", sender: self)

@@ -93,6 +93,22 @@ class Game: NSObject {
                  //   self.vC!.performSegueWithIdentifier("goBackToFriends", sender: self.vC!)
                    // return
                 //}
+                if (objects?.count == 0)
+                {
+                    let queryOver = PFQuery(className: "GameOver")
+                    queryOver.whereKey("gameID", equalTo: self.gameID)
+                    queryOver.findObjectsInBackgroundWithBlock {
+                        (objects: [PFObject]?, error: NSError?) -> Void in
+                        if (objects?.count >= 1) {
+                            if let objects = objects {
+                                for object in objects {
+                                    object.deleteEventually()
+                                    self.vC?.returnButtonAction()
+                                }
+                            }
+                        }
+                    }
+                }
                  if let objects = objects {
                     
                         let gameRecord = objects[0]
@@ -107,6 +123,7 @@ class Game: NSObject {
                     self.vC!.player2 = self.player2
                     self.whoseTurn = gameRecord.objectForKey("whoseTurn") as! String
                     self.questionText = gameRecord.objectForKey("questionText") as! String
+                    
                   //  self.player1Board = gameRecord.objectForKey("player1Board") as! [Int]
                   //  self.player2Board = gameRecord.objectForKey("player2Board") as! [Int]
                     if self.vC!.userID == self.player1 {

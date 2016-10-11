@@ -202,17 +202,42 @@ class ViewController: UIViewController {
                                         
                                     }
                                     let containerVC = (self.parentViewController as! ViewControllerContainers)
-                                    PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": containerVC.opponentID , "message": "\(containerVC.userName) just went for the win!"])
-                                    print("push")}
-             
+                                    PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": containerVC.opponentID , "message": "\(containerVC.userName) just went for the win. Is your person \(cardThatWasTapped.personName)?" ])
+                                    print("push")
+                                    let query = PFQuery(className: "TurnRecord")
+                                    query.whereKey("gameID", equalTo: containerVC.gameID)
                                     
-                                
-                                
+                                    query.findObjectsInBackgroundWithBlock {
+                                        (objects: [PFObject]?, error: NSError?) -> Void in
+                                        if let objects = objects {
+                                            for object in objects {
+                                                object.deleteEventually()
+                                            }
+                                        }
+                                    }
+                                    
+                                    let parseACL:PFACL = PFACL()
+                                    parseACL.publicReadAccess = true
+                                    parseACL.publicWriteAccess = true
+                                    
+                                    let turnRecord = PFObject(className: "TurnRecord")
+                                    turnRecord.ACL = parseACL
+                                    turnRecord["gameID"] = containerVC.gameID
+                                    turnRecord["playerID"] = containerVC.opponentID
+                                    turnRecord["text"] = "Is your person \(cardThatWasTapped.personName)?"
+                                    
+                                    turnRecord.saveEventually()
+                            
+                            }
+                            
+                            
+                            
+                            
                             }
 
-                            
-                            
-                            
+                        
+                        
+                        
                         }
                     
                 }

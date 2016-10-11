@@ -15,6 +15,8 @@ class GameListCell: UITableViewCell {
     @IBOutlet weak var textView: UILabel!
     @IBOutlet weak var profPicView: UIImageView!
    
+    @IBOutlet weak var turnRecord: UILabel!
+    @IBOutlet weak var yourTurn: UIView!
     override func layoutSubviews() {
         dispatch_async(dispatch_get_main_queue()){
             super.layoutSubviews()

@@ -134,6 +134,29 @@ class ViewControllerTopText: UIViewController {
                                         parentVC.block = false
                                         let containerVC = (self.parentViewController as! ViewControllerContainers)
                                         PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": parentVC.opponentID , "message": "\(containerVC.userName) has responded!"])
+                                        let query = PFQuery(className: "TurnRecord")
+                                        query.whereKey("gameID", equalTo: parentVC.gameID)
+                                        
+                                        query.findObjectsInBackgroundWithBlock {
+                                            (objects: [PFObject]?, error: NSError?) -> Void in
+                                            if let objects = objects {
+                                                for object in objects {
+                                                    object.deleteEventually()
+                                                }
+                                            }
+                                        }
+                                        
+                                        let parseACL:PFACL = PFACL()
+                                        parseACL.publicReadAccess = true
+                                        parseACL.publicWriteAccess = true
+                                        
+                                        let turnRecord = PFObject(className: "TurnRecord")
+                                        turnRecord.ACL = parseACL
+                                        turnRecord["gameID"] = parentVC.gameID
+                                        turnRecord["playerID"] = parentVC.opponentID
+                                        turnRecord["text"] = "\(parentVC.userName) has responded!"
+                                        
+                                        turnRecord.saveEventually()
                                     }
                                 }
                                 
@@ -237,6 +260,14 @@ class ViewControllerTopText: UIViewController {
             qLead = "Has your person"
             middleWord = "has"
         }
+        else if (str.containsString("Did your person")) {
+            qLead = "Did your person"
+            middleWord = "did"
+        }
+        else if (str.containsString("Was your person")) {
+            qLead = "Was your person"
+            middleWord = "was"
+        }
         if (!yes)
         {
             middleWord = "\(middleWord) not"
@@ -338,6 +369,29 @@ class ViewControllerTopText: UIViewController {
                                         parentVC.block = false
                                         let containerVC = (self.parentViewController as! ViewControllerContainers)
                                         PFCloud.callFunctionInBackground("alertUser", withParameters: ["channels": parentVC.opponentID , "message": "It's your turn to play against \(containerVC.userName)!"])
+                                        let query = PFQuery(className: "TurnRecord")
+                                        query.whereKey("gameID", equalTo: parentVC.gameID)
+                                        
+                                        query.findObjectsInBackgroundWithBlock {
+                                            (objects: [PFObject]?, error: NSError?) -> Void in
+                                            if let objects = objects {
+                                                for object in objects {
+                                                    object.deleteEventually()
+                                                }
+                                            }
+                                        }
+                                        
+                                        let parseACL:PFACL = PFACL()
+                                        parseACL.publicReadAccess = true
+                                        parseACL.publicWriteAccess = true
+                                        
+                                        let turnRecord = PFObject(className: "TurnRecord")
+                                        turnRecord.ACL = parseACL
+                                        turnRecord["gameID"] = parentVC.gameID
+                                        turnRecord["playerID"] = parentVC.opponentID
+                                        turnRecord["text"] = "It's your turn to play against \(parentVC.userName)!"
+                                        
+                                        turnRecord.saveEventually()
                                     }
                                 }
                                 
